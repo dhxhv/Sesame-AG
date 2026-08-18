@@ -22,21 +22,29 @@ object ReadingDada {
      * @param bizInfo 业务信息JSON对象
      * @return 是否回答成功
      */
+    private fun extractUrlParam(url: String, key: String): String? {
+        val idx = url.indexOf(key)
+        if (idx < 0) return null
+        val start = idx + key.length
+        val end = url.indexOf("&", start).let { if (it < 0) url.length else it }
+        return url.substring(start, end).takeIf { it.isNotEmpty() }
+    }
+
     fun answerQuestion(bizInfo: JSONObject): Boolean {
         try {
             // 获取任务跳转URL
             val taskJumpUrl = bizInfo.optString("taskJumpUrl").takeIf { it.isNotEmpty() }
-                ?: bizInfo.getString("targetUrl")
+                ?: bizInfo.optString("targetUrl")
 
             // 解析活动ID
-            val activityId = taskJumpUrl.split("activityId%3D")[1].split("%26")[0]
+            val activityId = extractUrlParam(taskJumpUrl, "activityId%3D")
+                ?: extractUrlParam(taskJumpUrl, "activityId=")
+                ?: return false
 
             // 解析外部业务ID
-            val outBizId = if (taskJumpUrl.contains("outBizId%3D")) {
-                taskJumpUrl.split("outBizId%3D")[1].split("%26")[0]
-            } else {
-                ""
-            }
+            val outBizId = extractUrlParam(taskJumpUrl, "outBizId%3D")
+                ?: extractUrlParam(taskJumpUrl, "outBizId=")
+                ?: ""
 
             // 获取问题
             val questionResponse = ReadingDadaRpcCall.getQuestion(activityId)

@@ -15,6 +15,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.lang.reflect.Type;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,13 +28,28 @@ public class JsonUtil {
     public static final TypeFactory TYPE_FACTORY = TypeFactory.defaultInstance(); // 类型工厂
     public static final JsonFactory JSON_FACTORY = new JsonFactory(); // JSON工厂
 
+    /**
+     * 线程安全的 DateFormat 包装：Jackson 内部会调用 clone()，
+     * 重写 clone() 保证每次返回新的 SimpleDateFormat 实例，避免多线程共享。
+     */
+    private static class ThreadSafeDateFormat extends SimpleDateFormat {
+        ThreadSafeDateFormat() {
+            super("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        }
+
+        @Override
+        public Object clone() {
+            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        }
+    }
+
     static {
         // 配置 ObjectMapper
         MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false); // 忽略未知属性
         MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false); // 忽略空对象
         MAPPER.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL); // 忽略空属性
         MAPPER.setTimeZone(TimeZone.getDefault()); // 设置时区
-        MAPPER.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())); // 设置日期格式
+        MAPPER.setDateFormat(new ThreadSafeDateFormat()); // 设置线程安全日期格式
     }
 
     public static ObjectMapper copyMapper() {

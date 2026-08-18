@@ -162,7 +162,8 @@ object UserMap {
     @Synchronized
     fun save(userId: String?): Boolean {
         if (userId.isNullOrEmpty()) return false
-        return Files.write2File(JsonUtil.formatJson(userMap), Files.getFriendIdMapFile(userId)!!)
+        val file = Files.getFriendIdMapFile(userId) ?: return false
+        return Files.write2File(JsonUtil.formatJson(userMap), file)
     }
 
     /**
@@ -175,7 +176,8 @@ object UserMap {
         if (userId.isNullOrEmpty()) return
 
         try {
-            val body = Files.readFromFile(Files.getSelfIdFile(userId)!!)
+            val file = Files.getSelfIdFile(userId) ?: return
+            val body = Files.readFromFile(file)
             if (body.isNotEmpty()) {
                 val dto: UserEntity.UserDto? = JsonUtil.parseObject(
                     body,
@@ -206,7 +208,16 @@ object UserMap {
             DataStore.put("activedUser", userEntity)
             Log.record(TAG, "update now active user: $userEntity")
         }
+        val userId = userEntity?.userId
+        if (userId.isNullOrEmpty()) {
+            Log.error(TAG, "saveSelf failed: userId is empty")
+            return
+        }
+        val file = Files.getSelfIdFile(userId) ?: run {
+            Log.error(TAG, "saveSelf failed: unable to get self id file")
+            return
+        }
         val body = JsonUtil.formatJson(userEntity)
-        Files.write2File(body, Files.getSelfIdFile(userEntity?.userId)!!)
+        Files.write2File(body, file)
     }
 }

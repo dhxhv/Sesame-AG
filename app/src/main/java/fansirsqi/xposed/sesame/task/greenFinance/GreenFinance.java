@@ -78,18 +78,25 @@ public class GreenFinance extends ModelTask {
                 Log.other("绿色经营📊未开通");
                 return;
             }
-            JSONObject mcaGreenLeafResult = result.getJSONObject("mcaGreenLeafResult");
-            JSONArray greenLeafList = mcaGreenLeafResult.getJSONArray("greenLeafList");
+            JSONObject mcaGreenLeafResult = result.optJSONObject("mcaGreenLeafResult");
+            if (mcaGreenLeafResult == null) return;
+            JSONArray greenLeafList = mcaGreenLeafResult.optJSONArray("greenLeafList");
+            if (greenLeafList == null || greenLeafList.length() == 0) return;
             String currentCode = "";
             JSONArray bsnIds = new JSONArray();
             for (int i = 0; i < greenLeafList.length(); i++) {
                 JSONObject greenLeaf = greenLeafList.getJSONObject(i);
-                String code = greenLeaf.getString("code");
-                if (currentCode.equals(code) || bsnIds.length() == 0) {
-                    bsnIds.put(greenLeaf.getString("bsnId"));
+                String code = greenLeaf.optString("code");
+                String bsnId = greenLeaf.optString("bsnId");
+                if (bsnId.isEmpty()) continue;
+                if (bsnIds.length() == 0 || currentCode.equals(code)) {
+                    currentCode = code;
+                    bsnIds.put(bsnId);
                 } else {
                     batchSelfCollect(bsnIds);
                     bsnIds = new JSONArray();
+                    currentCode = code;
+                    bsnIds.put(bsnId);
                 }
             }
             if (bsnIds.length() > 0) {

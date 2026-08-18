@@ -853,7 +853,10 @@ class AntFarm : ModelTask() {
 
                     syncAnimalStatus(ownerFarmId)
                     var guest = false
-                    when (SubAnimalType.valueOf(ownerAnimal.subAnimalType!!)) {
+                    val subAnimalType = try {
+                        ownerAnimal.subAnimalType?.let { SubAnimalType.valueOf(it) }
+                    } catch (_: Exception) { null } ?: SubAnimalType.NORMAL
+                    when (subAnimalType) {
                         SubAnimalType.GUEST -> {
                             guest = true
                             Log.record(TAG, "小鸡到好友家去做客了")
@@ -866,7 +869,10 @@ class AntFarm : ModelTask() {
                     var hungry = false
                     val userName =
                         UserMap.getMaskName(AntFarmRpcCall.farmId2UserId(ownerAnimal.currentFarmId))
-                    when (AnimalFeedStatus.valueOf(ownerAnimal.animalFeedStatus!!)) {
+                    val animalFeedStatus = try {
+                        ownerAnimal.animalFeedStatus?.let { AnimalFeedStatus.valueOf(it) }
+                    } catch (_: Exception) { null } ?: AnimalFeedStatus.NONE
+                    when (animalFeedStatus) {
                         AnimalFeedStatus.HUNGRY -> {
                             hungry = true
                             Log.record(TAG, "小鸡在[$userName]的庄园里挨饿")

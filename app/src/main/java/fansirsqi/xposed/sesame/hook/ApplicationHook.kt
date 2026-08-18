@@ -149,12 +149,20 @@ class ApplicationHook {
 
     fun loadPackageCompat(lpparam: LoadPackageParam) {
         if (General.PACKAGE_NAME != lpparam.packageName) return
-        val apkPath: String = (if (lpparam.appInfo != null) lpparam.appInfo.sourceDir else null)!!
+        val apkPath = lpparam.appInfo?.sourceDir
+        if (apkPath == null) {
+            Log.error(TAG, "无法获取应用 APK 路径，跳过 Hook")
+            return
+        }
         handleHookLogic(lpparam.classLoader, lpparam.packageName, apkPath, lpparam)
     }
 
     @SuppressLint("PrivateApi")
     private fun handleHookLogic(loader: ClassLoader?, packageName: String, apkPath: String, rawParam: Any?) {
+        if (loader == null) {
+            Log.error(TAG, "ClassLoader 为空，跳过 Hook")
+            return
+        }
         classLoader = loader
         // 1. 初始化配置读取
         val prefs = XSharedPreferences(General.MODULE_PACKAGE_NAME, SesameApplication.PREFERENCES_KEY)
