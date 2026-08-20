@@ -24,11 +24,17 @@ public class PortUtil {
             File configV2File = StringUtil.isEmpty(userId) ?
                     Files.getDefaultConfigV2File() :
                     Files.getConfigV2File(userId);
-            FileInputStream inputStream = new FileInputStream(configV2File);
-            if (Files.streamTo(inputStream, context.getContentResolver().openOutputStream(uri))) {
-                ToastUtil.INSTANCE.makeText("导出成功！", Toast.LENGTH_SHORT).show();
-            } else {
-                ToastUtil.INSTANCE.makeText("导出失败！", Toast.LENGTH_SHORT).show();
+            try (FileInputStream inputStream = new FileInputStream(configV2File)) {
+                java.io.OutputStream outputStream = context.getContentResolver().openOutputStream(uri);
+                if (outputStream == null) {
+                    ToastUtil.INSTANCE.makeText("导出失败：无法打开目标文件", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (Files.streamTo(inputStream, outputStream)) {
+                    ToastUtil.INSTANCE.makeText("导出成功！", Toast.LENGTH_SHORT).show();
+                } else {
+                    ToastUtil.INSTANCE.makeText("导出失败！", Toast.LENGTH_SHORT).show();
+                }
             }
         } catch (IOException e) {
             Log.printStackTrace(e);
@@ -44,23 +50,29 @@ public class PortUtil {
             File configV2File = StringUtil.isEmpty(userId) ?
                     Files.getDefaultConfigV2File() :
                     Files.getConfigV2File(userId);
-            FileOutputStream outputStream = new FileOutputStream(configV2File);
-            if (Files.streamTo(Objects.requireNonNull(context.getContentResolver().openInputStream(uri)), outputStream)) {
-                ToastUtil.INSTANCE.makeText("导入成功！", Toast.LENGTH_SHORT).show();
-                if (!StringUtil.isEmpty(userId)) {
-                    try {
-                        Intent intent = new Intent("com.eg.android.AlipayGphone.sesame.restart");
-                        intent.putExtra("userId", userId);
-                        context.sendBroadcast(intent);
-                    } catch (Throwable th) {
-                        Log.printStackTrace(th);
+            java.io.InputStream inputStream = context.getContentResolver().openInputStream(uri);
+            if (inputStream == null) {
+                ToastUtil.INSTANCE.makeText("导入失败：无法打开源文件", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            try (FileOutputStream outputStream = new FileOutputStream(configV2File)) {
+                if (Files.streamTo(inputStream, outputStream)) {
+                    ToastUtil.INSTANCE.makeText("导入成功！", Toast.LENGTH_SHORT).show();
+                    if (!StringUtil.isEmpty(userId)) {
+                        try {
+                            Intent intent = new Intent("com.eg.android.AlipayGphone.sesame.restart");
+                            intent.putExtra("userId", userId);
+                            context.sendBroadcast(intent);
+                        } catch (Throwable th) {
+                            Log.printStackTrace(th);
+                        }
                     }
+                    Intent intent = ((android.app.Activity) context).getIntent();
+                    ((android.app.Activity) context).finish();
+                    context.startActivity(intent);
+                } else {
+                    ToastUtil.INSTANCE.makeText("导入失败！", Toast.LENGTH_SHORT).show();
                 }
-                Intent intent = ((android.app.Activity) context).getIntent();
-                ((android.app.Activity) context).finish();
-                context.startActivity(intent);
-            } else {
-                ToastUtil.INSTANCE.makeText("导入失败！", Toast.LENGTH_SHORT).show();
             }
         } catch (IOException e) {
             Log.printStackTrace(e);

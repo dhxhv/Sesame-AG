@@ -1313,7 +1313,10 @@ class AntStall : ModelTask() {
 
             Log.record(TAG, "开始巡逻,寻找可贴罚单的好友...")
 
-            while (true) {
+            var ticketAttempts = 0
+            val maxTicketAttempts = 50
+            while (ticketAttempts < maxTicketAttempts) {
+                ticketAttempts++
                 try {
                     val response = AntStallRpcCall.nextTicketFriend()
                     val json = JSONObject(response)
@@ -1405,6 +1408,7 @@ class AntStall : ModelTask() {
                     GlobalThreadPools.sleepCompat(1500)
                 }
             }
+            Log.record(TAG, "蚂蚁新村贴罚单达到最大尝试次数，结束巡逻")
 
         } catch (t: Throwable) {
             Log.printStackTrace(TAG, "pasteTicket err:", t)

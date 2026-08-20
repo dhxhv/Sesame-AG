@@ -69,7 +69,9 @@ object Notify {
                 titleText = "🚀 启动中"
                 contentText = "🔔 暂无消息"
                 lastUpdateTime = System.currentTimeMillis()
-                mNotifyManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager?
+                val notifyManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager?
+                    ?: throw IllegalStateException("无法获取 NotificationManager")
+                mNotifyManager = notifyManager
                 val it = Intent(Intent.ACTION_VIEW)
                 it.setData("alipays://platformapi/startapp?appId=".toUri())
                 val pi = PendingIntent.getActivity(context, 0, it, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
@@ -78,7 +80,7 @@ object Notify {
                     notificationChannel.enableLights(false)
                     notificationChannel.enableVibration(false)
                     notificationChannel.setShowBadge(false)
-                    mNotifyManager!!.createNotificationChannel(notificationChannel)
+                    notifyManager.createNotificationChannel(notificationChannel)
                 }
                 builder = NotificationCompat.Builder(context, CHANNEL_ID)
                     .setCategory(NotificationCompat.CATEGORY_NAVIGATION)

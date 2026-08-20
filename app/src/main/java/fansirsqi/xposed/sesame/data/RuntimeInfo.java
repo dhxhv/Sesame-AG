@@ -12,6 +12,7 @@ import java.util.Objects;
 public class RuntimeInfo {
     private static final String TAG = RuntimeInfo.class.getSimpleName();
     // 当前单例实例
+    private static final Object INSTANCE_LOCK = new Object();
     private static RuntimeInfo instance;
     // 当前用户 ID
     private final String userId;
@@ -32,10 +33,19 @@ public class RuntimeInfo {
      * @return 返回 RuntimeInfo 的单例实例
      */
     public static RuntimeInfo getInstance() {
-        if (instance == null || !Objects.equals(instance.userId, UserMap.INSTANCE.getCurrentUid())) {
-            instance = new RuntimeInfo();
+        String currentUid = UserMap.INSTANCE.getCurrentUid();
+        RuntimeInfo local = instance;
+        if (local != null && Objects.equals(local.userId, currentUid)) {
+            return local;
         }
-        return instance;
+        synchronized (INSTANCE_LOCK) {
+            local = instance;
+            if (local != null && Objects.equals(local.userId, currentUid)) {
+                return local;
+            }
+            instance = new RuntimeInfo();
+            return instance;
+        }
     }
     /**
      * 构造函数，初始化当前用户的运行时信息。

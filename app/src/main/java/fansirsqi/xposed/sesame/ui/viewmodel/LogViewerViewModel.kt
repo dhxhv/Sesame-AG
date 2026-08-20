@@ -129,11 +129,16 @@ class LogViewerViewModel(application: Application) : AndroidViewModel(applicatio
 
             val fileSize = localRaf.length()
             lastKnownFileSize.set(fileSize)
-            // ✅ 如果文件大小为 0，直接清空并返回
+            // ✅ 如果文件大小为 0，清空后关闭文件（无需保持打开）
             if (fileSize == 0L) {
                 synchronized(allLineOffsets) { allLineOffsets.clear() }
                 lineCache.evictAll()
                 refreshList()
+                try {
+                    localRaf.close()
+                } catch (_: Exception) {
+                }
+                raf = null
                 return@withContext
             }
 

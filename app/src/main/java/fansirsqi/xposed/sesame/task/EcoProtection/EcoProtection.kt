@@ -92,7 +92,7 @@ class EcoProtection : ModelTask() {
                     if (!data.has("districtBriefInfoList")) {
                         return
                     }
-                    val districtBriefInfoList = data.getJSONArray("districtBriefInfoList")
+                    val districtBriefInfoList = data.optJSONArray("districtBriefInfoList") ?: return
                     for (i in 0..<districtBriefInfoList.length()) {
                         val districtBriefInfo = districtBriefInfoList.getJSONObject(i)
                         val userCanProtectTreeNum = districtBriefInfo.optInt("userCanProtectTreeNum", 0)

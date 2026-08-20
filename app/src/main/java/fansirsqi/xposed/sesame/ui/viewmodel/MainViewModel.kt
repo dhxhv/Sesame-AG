@@ -226,7 +226,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val startTime = System.currentTimeMillis()
             val result = withContext(Dispatchers.IO) { FansirsqiUtil.getOneWord() }
             val elapsedTime = System.currentTimeMillis() - startTime
-            if (elapsedTime < 2500) delay(500 - elapsedTime)
+            if (elapsedTime < 2500) delay(2500 - elapsedTime)
             _oneWord.value = result
             _isOneWordLoading.value = false
         }

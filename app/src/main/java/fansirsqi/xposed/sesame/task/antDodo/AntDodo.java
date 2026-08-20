@@ -137,13 +137,15 @@ public class AntDodo extends ModelTask {
                 receiveTaskAward();
                 if (!in8Days(endDate) || lastDay(endDate))
                     propList();
-                JSONArray ja = data.getJSONArray("limit");
+                JSONArray ja = data.optJSONArray("limit");
                 int index = -1;
-                for (int i = 0; i < ja.length(); i++) {
-                    jo = ja.getJSONObject(i);
-                    if ("DAILY_COLLECT".equals(jo.getString("actionCode"))) {
-                        index = i;
-                        break;
+                if (ja != null) {
+                    for (int i = 0; i < ja.length(); i++) {
+                        jo = ja.getJSONObject(i);
+                        if ("DAILY_COLLECT".equals(jo.getString("actionCode"))) {
+                            index = i;
+                            break;
+                        }
                     }
                 }
                 Set<String> set = sendFriendCard.getValue();
@@ -158,8 +160,9 @@ public class AntDodo extends ModelTask {
                             String name = animal.getString("name");
                             Log.forest("神奇物种🦕[" + ecosystem + "]#" + name);
                             if (!set.isEmpty()) {
+                                String currentUid = UserMap.INSTANCE.getCurrentUid();
                                 for (String userId : set) {
-                                    if (!UserMap.INSTANCE.getCurrentUid().equals(userId)) {
+                                    if (userId != null && !userId.equals(currentUid)) {
                                         int fantasticStarQuantity = animal.optInt("fantasticStarQuantity", 0);
                                         if (fantasticStarQuantity == 3) {
                                             sendCard(animal, userId);
@@ -174,8 +177,9 @@ public class AntDodo extends ModelTask {
                     }
                 }
                 if (!set.isEmpty()) {
+                    String currentUid = UserMap.INSTANCE.getCurrentUid();
                     for (String userId : set) {
-                        if (!UserMap.INSTANCE.getCurrentUid().equals(userId)) {
+                        if (userId != null && !userId.equals(currentUid)) {
                             sendAntDodoCard(bookId, userId);
                             break;
                         }
@@ -216,17 +220,25 @@ public class AntDodo extends ModelTask {
                 // 遍历每个任务组
                 for (int i = 0; i < taskGroupInfoList.length(); i++) {
                     JSONObject antDodoTask = taskGroupInfoList.getJSONObject(i);
-                    JSONArray taskInfoList = antDodoTask.getJSONArray("taskInfoList"); // 获取任务信息列表
+                    JSONArray taskInfoList = antDodoTask.optJSONArray("taskInfoList"); // 获取任务信息列表
+                    if (taskInfoList == null) continue;
                     // 遍历每个任务
                     for (int j = 0; j < taskInfoList.length(); j++) {
                         JSONObject taskInfo = taskInfoList.getJSONObject(j);
-                        JSONObject taskBaseInfo = taskInfo.getJSONObject("taskBaseInfo"); // 获取任务基本信息
-                        JSONObject bizInfo = new JSONObject(taskBaseInfo.getString("bizInfo")); // 获取业务信息
-                        String taskType = taskBaseInfo.getString("taskType"); // 获取任务类型
+                        JSONObject taskBaseInfo = taskInfo.optJSONObject("taskBaseInfo"); // 获取任务基本信息
+                        if (taskBaseInfo == null) continue;
+                        String taskType = taskBaseInfo.optString("taskType"); // 获取任务类型
+                        String bizInfoStr = taskBaseInfo.optString("bizInfo"); // 获取业务信息
+                        JSONObject bizInfo;
+                        try {
+                            bizInfo = new JSONObject(bizInfoStr);
+                        } catch (Exception e) {
+                            bizInfo = new JSONObject();
+                        }
                         String taskTitle = bizInfo.optString("taskTitle", taskType); // 获取任务标题
                         String awardCount = bizInfo.optString("awardCount", "1"); // 获取奖励数量
-                        String sceneCode = taskBaseInfo.getString("sceneCode"); // 获取场景代码
-                        String taskStatus = taskBaseInfo.getString("taskStatus"); // 获取任务状态
+                        String sceneCode = taskBaseInfo.optString("sceneCode"); // 获取场景代码
+                        String taskStatus = taskBaseInfo.optString("taskStatus"); // 获取任务状态
                         // 如果任务已完成，领取任务奖励
                         if (TaskStatus.FINISHED.name().equals(taskStatus)) {
                             JSONObject joAward = new JSONObject(
@@ -235,7 +247,7 @@ public class AntDodo extends ModelTask {
                                 doubleCheck = true;
                                 Log.forest("任务奖励🎖️[" + taskTitle + "]#" + awardCount + "个");
                             } else {
-                                Log.record(TAG,"领取失败，" + response); // 记录领取失败信息
+                                Log.record(TAG,"领取失败，" + joAward.optString("resultDesc")); // 记录领取失败信息
                             }
                             Log.record(TAG,joAward.toString()); // 打印奖励响应
                         }

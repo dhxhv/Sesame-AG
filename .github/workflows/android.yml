@@ -5,6 +5,7 @@ on:
   push:
     tags:
       - "[0-9]*-*"
+  workflow_dispatch:
 
 env:
   CI: "true"
@@ -73,7 +74,21 @@ jobs:
           grep -Eq 'sourceCompatibility = JavaVersion.VERSION_17' app/build.gradle.kts
           grep -Eq 'targetCompatibility = JavaVersion.VERSION_17' app/build.gradle.kts
 
+      - name: Resolve Dispatch Metadata
+        if: github.event_name == 'workflow_dispatch'
+        id: meta
+        shell: bash
+        run: |
+          configured_version_name="$(sed -n 's/^appVersion=//p' gradle.properties | head -n1 | tr -d '\r')"
+          echo "tag_valid=false" >> "$GITHUB_OUTPUT"
+          echo "tag_version_code=" >> "$GITHUB_OUTPUT"
+          echo "configured_version_name=${configured_version_name}" >> "$GITHUB_OUTPUT"
+          echo "version_name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          echo "version_code=${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "xposed_tag=manual-${GITHUB_REF_NAME}-${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
       - name: Resolve Release Metadata
+        if: github.event_name == 'push'
         id: meta
         shell: bash
         run: |
@@ -114,6 +129,7 @@ jobs:
         id: check
         shell: bash
         env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
           TAG_VALID: ${{ steps.meta.outputs.tag_valid }}
           TAG_VERSION_CODE: ${{ steps.meta.outputs.tag_version_code }}
           CONFIGURED_VERSION_NAME: ${{ steps.meta.outputs.configured_version_name }}
@@ -158,6 +174,9 @@ jobs:
             reason="缺少必要发布配置: ${missing[*]}"
           elif [[ ${#invalid[@]} -gt 0 ]]; then
             reason="发布配置格式错误: ${invalid[*]} 必须是 64 位无冒号大写十六进制 SHA-256 指纹"
+          elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            ready="true"
+            reason="手动触发预检通过"
           elif [[ "${TAG_VALID}" != "true" ]]; then
             reason="标签 ${RELEASE_TAG_RAW} 不符合 Xposed 要求的 VersionCode-VersionName 格式"
           elif [[ "${VERSION_NAME}" != "${CONFIGURED_VERSION_NAME}" ]]; then

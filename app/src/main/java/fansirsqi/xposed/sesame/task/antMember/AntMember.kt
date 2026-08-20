@@ -3011,7 +3011,7 @@ class AntMember : ModelTask() {
         try {
             val userId = UserMap.currentUid
             // 获取用户在配置中选中的商品ID列表（白名单）
-            val targetIds = sesameGrainExchangeList!!.value
+            val targetIds = sesameGrainExchangeList?.value ?: emptyList()
             var currentPage = 1
             // 限制最大页数，防止无限循环（抓包看大概也就3-5页）
             val maxPage = 10

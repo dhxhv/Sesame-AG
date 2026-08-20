@@ -4,11 +4,12 @@ from typing import List
 
 # Corrected imports for exception handling
 import json  # Import the json module for serialization
+import os
 from fastapi import Depends, HTTPException, Query, Request, status, FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from config import Base, db_session, engine, logger
 from models import HookData as HookDataModel  # 重命名以避免冲突
@@ -16,6 +17,9 @@ from schemas import HookDataSchema, HookDataCreate  # 导入 Pydantic 模型
 
 
 app = FastAPI()
+
+# 限制自动清理频率，避免整点分钟内重复触发
+_last_cleanup_time: datetime | None = None
 
 
 # 添加自定义异常处理器来记录详细的验证错误
@@ -90,9 +94,16 @@ async def get_webhooks(
     per_page: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    # 自动清理旧数据（每小时执行）
-    if datetime.now().minute == 0:
-        HookDataModel.cleanup_old_data(db,max_count=10)  # 调用清理方法时使用 SQLAlchemy 模型
+    # 自动清理旧数据（每小时最多执行一次）
+    global _last_cleanup_time
+    now = datetime.now()
+    if _last_cleanup_time is None or now - _last_cleanup_time >= timedelta(hours=1):
+        _last_cleanup_time = now
+        try:
+            max_count = int(os.environ.get("MAX_WEBHOOK_KEEP", "100"))
+            HookDataModel.cleanup_old_data(db, max_count=max_count)
+        except Exception as e:
+            logger.error(f"自动清理旧数据失败: {e}")
 
     skip = (page - 1) * per_page
     items = (
@@ -121,8 +132,9 @@ def get_lan_ip():
 
 if __name__ == "__main__":
     import uvicorn
-#     host = get_lan_ip()
-    host="192.168.9.112"
-    logger.info(f"Starting FastAPI server on {host} ")
-    uvicorn.run(app, host=host, port=9527)
+    import os
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", "9527"))
+    logger.info(f"Starting FastAPI server on {host}:{port}")
+    uvicorn.run(app, host=host, port=port)
     logger.info("FastAPI server stopped.")

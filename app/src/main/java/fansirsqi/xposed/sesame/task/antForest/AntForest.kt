@@ -1178,9 +1178,9 @@ class AntForest : ModelTask(), EnergyCollectCallback {
         try {
             val joEnergy = JSONObject(response)
             if (ResChecker.checkRes(TAG + "收集能量失败:", joEnergy)) {
-                val bubbles = joEnergy.getJSONArray("bubbles")
-                if (bubbles.length() > 0) {
-                    val collected = bubbles.getJSONObject(0).getInt("collectedEnergy")
+                val bubbles = joEnergy.optJSONArray("bubbles")
+                if (bubbles != null && bubbles.length() > 0) {
+                    val collected = bubbles.getJSONObject(0).optInt("collectedEnergy", 0)
                     if (collected > 0) {
                         val msg = successMessage + "[" + collected + "g]"
                         Log.forest(msg)
@@ -2101,9 +2101,9 @@ class AntForest : ModelTask(), EnergyCollectCallback {
             "totalData",
             "pk",
             JsonPredicate { pkObject: JSONObject? ->
-                if (pkObject!!.getString("rankMemberStatus") != "JOIN") {
+                if (pkObject == null || pkObject.optString("rankMemberStatus") != "JOIN") {
                     Log.record(TAG, "未加入PK排行榜,跳过,尝试关闭")
-                    pkEnergy!!.value = false
+                    pkEnergy?.value = false
                     return@JsonPredicate false
                 }
                 true

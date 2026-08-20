@@ -7,6 +7,8 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.IBinder
 import android.os.RemoteCallbackList
 import android.os.RemoteException
@@ -112,14 +114,17 @@ class CommandService : Service() {
         }
     }
 
-    @SuppressLint("ForegroundServiceType")
     override fun onCreate() {
         super.onCreate()
 
         Log.d(TAG, "CommandService onCreate")
         // 立即启动前台服务，避免超时
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, createNotification())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIFICATION_ID, createNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(NOTIFICATION_ID, createNotification())
+        }
         // 延迟初始化 ShellManager（不阻塞前台服务启动）
         serviceScope.launch {
             try {

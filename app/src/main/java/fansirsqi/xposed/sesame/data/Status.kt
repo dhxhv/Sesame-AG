@@ -285,7 +285,8 @@ class Status {
 
         @JvmStatic
         fun antStallAssistFriendToday() {
-            if (INSTANCE.antStallAssistFriend.add(UserMap.currentUid!!)) {
+            val currentUid = UserMap.currentUid ?: return
+            if (INSTANCE.antStallAssistFriend.add(currentUid)) {
                 save()
             }
         }
@@ -297,7 +298,8 @@ class Status {
 
         @JvmStatic
         fun antOrchardAssistFriendToday() {
-            if (INSTANCE.antOrchardAssistFriend.add(UserMap.currentUid!!)) {
+            val currentUid = UserMap.currentUid ?: return
+            if (INSTANCE.antOrchardAssistFriend.add(currentUid)) {
                 save()
             }
         }
@@ -325,7 +327,8 @@ class Status {
 
         @JvmStatic
         fun pasteTicketTime() {
-            if (INSTANCE.canPasteTicketTime.add(UserMap.currentUid!!)) {
+            val currentUid = UserMap.currentUid ?: return
+            if (INSTANCE.canPasteTicketTime.add(currentUid)) {
                 save()
             }
         }
@@ -395,7 +398,8 @@ class Status {
         @JvmStatic
         fun greenFinancePointFriend() {
             if (canGreenFinancePointFriend()) return
-            INSTANCE.greenFinancePointFriend.add(UserMap.currentUid!!)
+            val currentUid = UserMap.currentUid ?: return
+            INSTANCE.greenFinancePointFriend.add(currentUid)
             save()
         }
 
@@ -413,7 +417,8 @@ class Status {
         @JvmStatic
         fun greenFinancePrizesMap() {
             if (!canGreenFinancePrizesMap()) return
-            INSTANCE.greenFinancePrizesMap[UserMap.currentUid!!] = TimeUtil.getWeekNumber(Date())
+            val currentUid = UserMap.currentUid ?: return
+            INSTANCE.greenFinancePrizesMap[currentUid] = TimeUtil.getWeekNumber(Date())
             save()
         }
 
